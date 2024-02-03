@@ -6,20 +6,30 @@ import {
     View,
     Image,
     ScrollView,
-    Keyboard, Text,
+    Text, Keyboard,
 } from "react-native";
-import {useState} from "react";
+import { useState } from "react";
 import {useNavigation} from "@react-navigation/native";
 
 export default function HomeScreen() {
     const [task, setTask] = useState();
     const [taskItems, setTaskItems] = useState([]);
+    const [editableIndex, setEditableIndex] = useState(null);
+    const [modifiedTask, setModifiedTask] = useState("");
     const navigation = useNavigation();
+
+    const handleLongPress = (index) => {
+        setEditableIndex(index);
+        setModifiedTask(taskItems[index]);
+        setTask(null);
+    };
 
     const handleAddTask = () => {
         Keyboard.dismiss();
-        setTaskItems([...taskItems, task])
-        setTask(null);
+        if (task) {
+            setTaskItems([...taskItems, task])
+            setTask(null);
+        }
     }
 
     const completeTask = (index) => {
@@ -27,6 +37,13 @@ export default function HomeScreen() {
         itemsCopy.splice(index, 1);
         setTaskItems(itemsCopy)
     }
+
+    const handleUpdateTask = () => {
+        let itemsCopy = [...taskItems];
+        itemsCopy[editableIndex] = modifiedTask;
+        setTaskItems(itemsCopy);
+        setEditableIndex(null);
+    };
 
     return (
         <View className="flex-1" style={{backgroundColor: '#877dfa'}}>
@@ -43,12 +60,23 @@ export default function HomeScreen() {
                     {
                         taskItems.map((item, index) => {
                             return (
-                                <TouchableOpacity key={index} onPress={() => completeTask(index)}>
+                                <TouchableOpacity key={index} onPress={() => completeTask(index)}
+                                                  onLongPress={() => handleLongPress(index)}>
                                     <View className="border-gray-700 bg-gray-200 p-3.5 rounded-xl flex-row items-center justify-between mb-5">
-                                        <View className="flex-row items-center">
-                                            <View className="w-6 h-6 opacity-40 rounded-md mr-3"
+                                        <View className="flex-row items-center h-10">
+                                            <View className="w-6 h-6 opacity-40 rounded-md mr-3 max-w-sm"
                                                   style={{backgroundColor: '#877dfa'}}></View>
-                                            <Text>{item}</Text>
+                                            {editableIndex === index ? (
+                                              <TextInput
+                                                className="text-base w-60"
+                                                value={modifiedTask}
+                                                onChangeText={setModifiedTask}
+                                                onBlur={handleUpdateTask}
+                                                autoFocus
+                                              />
+                                            ) : (
+                                              <Text className="text-base w-60">{item}</Text>
+                                            )}
                                         </View>
                                     </View>
                                 </TouchableOpacity>
