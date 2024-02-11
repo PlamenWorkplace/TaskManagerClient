@@ -2,9 +2,15 @@ import { View, Text, TouchableOpacity, Image, TextInput } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useNavigation} from "@react-navigation/native";
 import { ArrowLeftIcon } from "react-native-heroicons/solid";
+import { useState } from "react";
+import { useAuthorization } from "../factories/AuthProvider";
 
 export default function LoginScreen() {
+    const { logIn } = useAuthorization();
     const navigation = useNavigation();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
     return (
         <View className="flex-1 bg-white" style={{backgroundColor: '#877dfa'}}>
             <SafeAreaView className="flex">
@@ -23,22 +29,25 @@ export default function LoginScreen() {
                     <Text className="text-gray-700 ml-4">Email Address</Text>
                     <TextInput
                         className="p-3 bg-gray-100 text-gray-700 rounded-2xl mb-3"
-                        value="plamkata2005"
-                        placeholder="email"
+                        placeholder="Email"
+                        value={email}
+                        onChangeText={value => setEmail(value)}
                     />
                     <Text className="text-gray-700 ml-4">Password</Text>
                     <TextInput
                         className="p-3 bg-gray-100 text-gray-700 rounded-2xl"
                         secureTextEntry
-                        value="test12345"
-                        placeholder="password"
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={value=> setPassword(value)}
                     />
                     <TouchableOpacity className="flex items-end"
                                       onPress={() => navigation.navigate('SignUp')}>
                         <Text className="text-gray-700 mb-5">Don't have an account?</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity className="p-3 bg-yellow-400 rounded-xl"
-                                      onPress={() => navigation.navigate('Home')}>
+                    <TouchableOpacity className="p-3 bg-yellow-400 rounded-xl" onPress={() => {
+                        if (email && password) logIn(email, password);
+                    }}>
                         <Text className="text-xl font-bold text-center text-gray-700">Login</Text>
                     </TouchableOpacity>
                 </View>

@@ -1,10 +1,11 @@
 import AppNavigation from "./navigation/AppNavigation";
 import React from "react";
-// import clientInstance from './config/rabbitmq/RabbitMqClient';
+import { AuthProvider } from "./factories/AuthProvider";
 
 export default function App(): React.JSX.Element {
-  // await clientInstance.initialize();
   return (
-    <AppNavigation />
+    <AuthProvider>
+      <AppNavigation />
+    </AuthProvider>
   );
 }
