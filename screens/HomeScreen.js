@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,54 +10,35 @@ import {
   Text,
   Keyboard,
 } from "react-native";
-import { useAuthorization } from "../factories/AuthProvider";
-
-const initialState = {
-  task: "",
-  taskItems: [],
-  editableIndex: null,
-  modifiedTask: "",
-};
-
-const reducer = (state, action) => {
-  switch (action.type) {
-    case "SET_TASK":
-      return { ...state, task: action.payload };
-    case "ADD_TASK":
-      return {
-        ...state,
-        taskItems: [...state.taskItems, state.task],
-        task: "",
-      };
-    case "SET_EDITABLE_INDEX":
-      return { ...state, editableIndex: action.payload };
-    case "SET_MODIFIED_TASK":
-      return { ...state, modifiedTask: action.payload };
-    case "COMPLETE_TASK":
-      let itemsCopy = [...state.taskItems];
-      itemsCopy.splice(action.payload, 1);
-      return { ...state, taskItems: itemsCopy };
-    case "UPDATE_TASK":
-      let itemsCopyForUpdate = [...state.taskItems];
-      itemsCopyForUpdate[state.editableIndex] = state.modifiedTask;
-      return { ...state, taskItems: itemsCopyForUpdate, editableIndex: null };
-    default:
-      return state;
-  }
-};
+import { useAuthorization } from "../service/AuthService";
+import { initialState, reducer } from "../util/ReducerUtil";
 
 export default function HomeScreen() {
-  const { signOut } = useAuthorization();
+  const { email, signOut } = useAuthorization();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { task, taskItems, editableIndex, modifiedTask } = state;
 
-  const {
-    task,
-    taskItems,
-    editableIndex,
-    modifiedTask
-  } = state;
+  let ws = useRef(null);
+  useEffect(() => {
+    ws.current = new WebSocket('ws://10.0.2.2:3000/task');
 
-  const handleLongPress = (index) => {
+    ws.current.onopen = () => ws.current.send(JSON.stringify({ email: email, command: "CONNECTED" }));
+    ws.current.onmessage = event => {
+      JSON.parse(event.data).forEach( task => {
+        dispatch({ type: "SET_TASK", payload: task });
+        dispatch({ type: "ADD_TASK" });
+      });
+    }
+    ws.current.onerror = e => console.error("WebSocket error: ", e);
+
+    return () => {
+      ws.current.send(JSON.stringify({ email: email, command: "DISCONNECTED" }));
+      dispatch({ type: "DELETE_ALL_TASKS" });
+      ws.current.close();
+    }
+  }, []);
+
+  const handleLongPress = index => {
     dispatch({ type: "SET_EDITABLE_INDEX", payload: index });
     dispatch({ type: "SET_MODIFIED_TASK", payload: taskItems[index] });
     dispatch({ type: "SET_TASK", payload: "" });
@@ -66,15 +47,19 @@ export default function HomeScreen() {
   const handleAddTask = () => {
     Keyboard.dismiss();
     if (task) {
+      ws.current.send(JSON.stringify({ email: email, command: "ADD_TASK", task: task }));
       dispatch({ type: "ADD_TASK" });
     }
   };
 
-  const completeTask = (index) => {
+  const completeTask = index => {
+    ws.current.send(JSON.stringify({ email: email, command: "COMPLETE_TASK", index: index }));
     dispatch({ type: "COMPLETE_TASK", payload: index });
   };
 
   const handleUpdateTask = () => {
+    ws.current.send(JSON.stringify({ email: email,
+      command: "UPDATE_TASK", index: editableIndex , task: modifiedTask }));
     dispatch({ type: "UPDATE_TASK" });
   };
 
@@ -108,9 +93,7 @@ export default function HomeScreen() {
                       <TextInput
                         className="text-base w-60"
                         value={modifiedTask}
-                        onChangeText={(text) =>
-                          dispatch({ type: "SET_MODIFIED_TASK", payload: text })
-                        }
+                        onChangeText={text => dispatch({ type: "SET_MODIFIED_TASK", payload: text })}
                         onBlur={handleUpdateTask}
                         autoFocus
                       />
@@ -134,7 +117,7 @@ export default function HomeScreen() {
           className="p-3.5 rounded-full bg-white border-gray-700 w-64"
           placeholder={"Write a task..."}
           value={task}
-          onChangeText={(text) => dispatch({ type: "SET_TASK", payload: text })}
+          onChangeText={text => dispatch({ type: "SET_TASK", payload: text })}
         />
         <TouchableOpacity onPress={handleAddTask}>
           <View className="rounded-full bg-white justify-center items-center h-14 w-14 border-gray-700">

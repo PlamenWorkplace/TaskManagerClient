@@ -1,8 +1,8 @@
 import { createContext, useContext, useReducer, useMemo } from "react";
-import { logIn, signUp } from "./UserHandler";
+import { logIn, signUp } from "./UserService";
 
 const AuthContext = createContext({
-  authenticated: false,
+  email: null,
   signUp: () => {},
   logIn: () => {},
   signOut: () => {},
@@ -17,26 +17,19 @@ export const useAuthorization = () => {
 };
 
 export const AuthProvider = props => {
-  const [state, dispatch] = useReducer(reducer, { authenticated: false });
+  const [state, dispatch] = useReducer(reducer, { email: null });
 
   const actions = useMemo(
     () => ({
-      signOut: async () => {
-        dispatch({ type: 'SIGN_OUT' });
-      },
+      signOut: async () => dispatch({ type: "SIGN_OUT" })
+      ,
       logIn: async (email, password) => {
         const response = await logIn(email, password);
-        console.log(response)
-        if (response === "1") {
-          dispatch({ type: 'LOG_IN'});
-        }
+        if (response === "1") dispatch({ type: "LOG_IN", email: email })
       },
       signUp: async (username, email, password) => {
         const response = await signUp(username, email, password);
-        console.log(response);
-        if (response === "1") {
-          dispatch({ type: 'SIGN_UP' });
-        }
+        if (response === "1") dispatch({ type: "SIGN_UP", email: email  })
       },
     }), []
   );
@@ -53,13 +46,13 @@ const reducer = (state, action) => {
     case 'SIGN_OUT':
       return {
         ...state,
-        authenticated: false
+        email: null
       };
     case 'LOG_IN':
     case 'SIGN_UP':
       return {
         ...state,
-        authenticated: true
+        email: action.email
       };
     default:
       return state;

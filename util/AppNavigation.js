@@ -4,14 +4,14 @@ import HomeScreen from '../screens/HomeScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
-import { useAuthorization } from "../factories/AuthProvider";
+import { useAuthorization } from "../service/AuthService";
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigation() {
-  const { authenticated } = useAuthorization();
+  const { email } = useAuthorization();
 
-  if (authenticated) {
+  if (email) {
     return (
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Home" screenOptions={{headerShown: false}}>

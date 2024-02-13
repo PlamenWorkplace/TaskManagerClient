@@ -1,6 +1,6 @@
-import AppNavigation from "./navigation/AppNavigation";
+import AppNavigation from "./util/AppNavigation";
 import React from "react";
-import { AuthProvider } from "./factories/AuthProvider";
+import { AuthProvider } from "./service/AuthService";
 
 export default function App(): React.JSX.Element {
   return (
